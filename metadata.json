@@ -1,0 +1,6 @@
+{
+  "name": "Remix: 24hoc",
+  "description": "Một ứng dụng học tập được trò chơi hóa, nơi người dùng điều hướng qua mê cung tri thức bằng cách trả lời các câu hỏi do AI tạo ra.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

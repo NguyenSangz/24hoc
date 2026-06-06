@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>24hoc</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Inter"', 'sans-serif'],
+              display: ['"Space Grotesk"', 'sans-serif'],
+              serif: ['"Playfair Display"', 'serif'],
+              mono: ['"JetBrains Mono"', 'monospace'],
+            },
+            colors: {
+              primary: {
+                DEFAULT: 'var(--color-primary)',
+                text: 'var(--color-primary-text)',
+              },
+              secondary: 'var(--color-secondary)',
+              background: 'var(--color-bg)',
+              surface: 'var(--color-surface)',
+              text: 'var(--color-text)',
+              muted: 'var(--color-muted)',
+              border: 'var(--color-border)',
+              success: 'var(--color-success)',
+              danger: 'var(--color-danger)',
+              // Semantic Tints
+              'blue-tint': 'var(--bg-blue)',
+              'blue-text': 'var(--text-blue)',
+              'emerald-tint': 'var(--bg-emerald)',
+              'emerald-text': 'var(--text-emerald)',
+              'purple-tint': 'var(--bg-purple)',
+              'purple-text': 'var(--text-purple)',
+              'orange-tint': 'var(--bg-orange)',
+              'orange-text': 'var(--text-orange)',
+            },
+            animation: {
+              'path-flow': 'dash 30s linear infinite',
+              'scale-in': 'scaleIn 0.5s ease-out forwards',
+              'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+              'float': 'float 6s ease-in-out infinite',
+            },
+            keyframes: {
+              dash: {
+                '0%': { strokeDashoffset: '1000' },
+                '100%': { strokeDashoffset: '0' },
+              },
+              scaleIn: {
+                '0%': { transform: 'scale(0) translate(-50%, -50%)', opacity: '0' },
+                '100%': { transform: 'scale(1) translate(-50%, -50%)', opacity: '1' },
+              },
+              shake: {
+                '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-20px)' },
+              }
+            }
+          },
+        },
+      }
+    </script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+      
+      :root {
+        /* Light Theme - Modern Minimalist */
+        --color-primary: #000000; 
+        --color-primary-text: #ffffff;
+        --color-secondary: #4b5563;
+        --color-bg: #ffffff; 
+        --color-surface: #f9fafb;
+        --color-text: #111827; 
+        --color-muted: #6b7280; 
+        --color-border: #e5e7eb; 
+        --color-success: #10b981; 
+        --color-danger: #ef4444; 
+
+        /* Semantic Tints */
+        --bg-blue: #eff6ff;
+        --text-blue: #2563eb;
+        --bg-emerald: #ecfdf5;
+        --text-emerald: #059669;
+        --bg-purple: #f5f3ff;
+        --text-purple: #7c3aed;
+        --bg-orange: #fff7ed;
+        --text-orange: #ea580c;
+      }
+
+      .dark {
+        /* Dark Theme - Deep Zinc */
+        --color-primary: #ffffff;
+        --color-primary-text: #000000;
+        --color-secondary: #9ca3af;
+        --color-bg: #09090b; 
+        --color-surface: #18181b; 
+        --color-text: #fafafa; 
+        --color-muted: #a1a1aa; 
+        --color-border: #27272a; 
+        --color-success: #34d399;
+        --color-danger: #f87171;
+
+        /* Semantic Tints - Dark Mode Optimized */
+        --bg-blue: rgba(59, 130, 246, 0.15);
+        --text-blue: #60a5fa;
+        --bg-emerald: rgba(16, 185, 129, 0.15);
+        --text-emerald: #34d399;
+        --bg-purple: rgba(168, 85, 247, 0.15);
+        --text-purple: #a78bfa;
+        --bg-orange: rgba(249, 115, 22, 0.15);
+        --text-orange: #fb923c;
+      }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--color-bg);
+        color: var(--color-text);
+        transition: background-color 0.3s ease, color 0.3s ease;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      .font-display { font-family: 'Space Grotesk', sans-serif; }
+      .font-serif { font-family: 'Playfair Display', serif; }
+      .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+      .btn-primary {
+        background-color: var(--color-primary);
+        color: var(--color-primary-text);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .btn-primary:hover {
+        background-color: var(--color-secondary);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+      }
+      
+      .card {
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      /* Custom Scrollbar - Minimalist */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background-color: var(--color-border);
+        border-radius: 20px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background-color: var(--color-muted);
+      }
+
+      /* No Scrollbar Utility */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      /* Text Balance */
+      .text-balance {
+        text-wrap: balance;
+      }
+
+      /* Markdown Styles */
+      .markdown-body {
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .markdown-body p {
+        margin-bottom: 0.75rem;
+      }
+      .markdown-body p:last-child {
+        margin-bottom: 0;
+      }
+      .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+        font-weight: 700;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+        color: var(--color-primary);
+      }
+      .markdown-body ul, .markdown-body ol {
+        margin-bottom: 0.75rem;
+        padding-left: 1.25rem;
+      }
+      .markdown-body li {
+        margin-bottom: 0.25rem;
+      }
+      .markdown-body code {
+        background-color: rgba(0,0,0,0.05);
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.25rem;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85em;
+      }
+      .dark .markdown-body code {
+        background-color: rgba(255,255,255,0.1);
+      }
+      .markdown-body pre {
+        background-color: #1a1a1a;
+        color: #f8f8f2;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        overflow-x: auto;
+        margin-bottom: 0.75rem;
+      }
+      .markdown-body pre code {
+        background-color: transparent;
+        padding: 0;
+        color: inherit;
+      }
+
+      /* 3D Perspective Card Flip Utilities */
+      .perspective-1000 {
+        perspective: 1000px;
+        -webkit-perspective: 1000px;
+      }
+      .preserve-3d {
+        transform-style: preserve-3d;
+        -webkit-transform-style: preserve-3d;
+      }
+      .backface-hidden {
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+      }
+    </style>
+
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
