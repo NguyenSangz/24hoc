@@ -33,8 +33,9 @@ export interface StudyGuide {
   lessons: Lesson[];
 }
 
-// Correct API key usage for Vite
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Correct API key usage for Vite. Fallback to empty string to prevent top-level crash if env is not set in Vercel.
+const apiKey = process.env.GEMINI_API_KEY || "missing_api_key";
+const ai = new GoogleGenAI({ apiKey });
 
 const MODEL_PRO = "gemini-3.1-pro-preview";
 const MODEL_FLASH = "gemini-3-flash-preview";
