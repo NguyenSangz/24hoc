@@ -3,6 +3,7 @@
   "startCommand": "node dist/server.cjs",
   "outputDirectory": "dist",
   "env": {
+    "NODE_ENV": "production",
     "GEMINI_API_KEY": "@gemini_api_key",
     "SERVER_SECRET": "@server_secret"
   }
