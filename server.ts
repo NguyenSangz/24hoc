@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const DB_FILE = path.join(process.cwd(), "db.json");
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Use a more robust key derivation or a fixed key for the demo
 // In a real app, this should come from environment variables
