@@ -39,22 +39,27 @@ export const auth = {
   },
 
   login: async (username: string, password: string, remember: boolean = true): Promise<User | null> => {
+    // Sync credentials and stats from server prior to verification (makes multi-device login possible)
+    try {
+      const serverData = await fetch(`/api/users/${username}`).then(r => r.json());
+      if (serverData) {
+        if (serverData[STORES.USERS]) {
+          await db.put(STORES.USERS, serverData[STORES.USERS]);
+        }
+        if (serverData[STORES.STATS]) {
+          await db.put(STORES.STATS, { username, ...serverData[STORES.STATS] });
+        }
+        if (serverData[STORES.INVENTORY]) {
+          await db.put(STORES.INVENTORY, { username, ...serverData[STORES.INVENTORY] });
+        }
+      }
+    } catch (e) {
+      console.error("Retrieve server user credentials on login failed", e);
+    }
+
     const storedUser = await db.get<User & { password: string }>(STORES.USERS, username);
     
     if (storedUser && storedUser.password === password) {
-      // Sync from server on login
-      try {
-        const serverData = await fetch(`/api/users/${username}`).then(r => r.json());
-        if (serverData) {
-          if (serverData[STORES.STATS]) {
-            await db.put(STORES.STATS, { username, ...serverData[STORES.STATS] });
-          }
-          if (serverData[STORES.INVENTORY]) {
-            await db.put(STORES.INVENTORY, { username, ...serverData[STORES.INVENTORY] });
-          }
-        }
-      } catch (e) { console.error("Server sync failed", e); }
-
       const user: User = {
         username: storedUser.username,
         displayName: storedUser.displayName

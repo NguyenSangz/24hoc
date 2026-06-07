@@ -1145,7 +1145,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ user, activeTab, onStart,
                                 >
                                   <span className="text-[8px] font-black uppercase">D{idx + 1}</span>
                                   {claimed ? (
-                                    <span className="text-[9px] font-bold text-white">✓</span>
+                                    <span className="text-[9px] font-bold text-primary-text">✓</span>
                                   ) : (
                                     <span className="text-[9px] font-semibold text-zinc-500">
                                       {idx === 2 ? '💡' : idx === 5 ? '🛡️' : '💎'}
@@ -1212,7 +1212,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ user, activeTab, onStart,
                             <div className="mt-2.5 flex items-center gap-3">
                               <div className="flex-1 h-1.5 bg-zinc-800/80 rounded-full overflow-hidden">
                                 <motion.div
-                                  className={`h-full ${isClaimed ? 'bg-zinc-650' : isCompleted ? 'bg-primary' : 'bg-zinc-500'}`}
+                                  className={`h-full ${isClaimed ? 'bg-zinc-600' : isCompleted ? 'bg-yellow-400' : 'bg-zinc-500'}`}
                                   initial={{ width: 0 }}
                                   animate={{ width: `${percent}%` }}
                                   transition={{ duration: 0.5 }}
@@ -1453,16 +1453,16 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ user, activeTab, onStart,
                     e.stopPropagation();
                     speakTerm(currentCard.definition);
                   }}
-                  className="p-2 bg-white/10 hover:bg-white/20 text-primary-text rounded-xl transition-all"
+                  className="p-2 bg-current/15 hover:bg-current/25 text-primary-text rounded-xl transition-all"
                 >
                   <Volume2 size={16}/>
                 </button>
               </div>
               <div className="px-4 overflow-y-auto max-h-36 md:max-h-48 custom-scrollbar">
-                <p className="text-xs font-black text-white/60 dark:text-black/60 uppercase tracking-[0.2em] mb-3">Định nghĩa & ý nghĩa</p>
+                <p className="text-xs font-black text-primary-text opacity-70 uppercase tracking-[0.2em] mb-3">Định nghĩa & ý nghĩa</p>
                 <p className="text-base md:text-lg font-medium leading-relaxed">{currentCard.definition}</p>
               </div>
-              <div className="text-xs text-white/60 dark:text-black/60 font-medium">Bấm vào thẻ để quay lại</div>
+              <div className="text-xs text-primary-text opacity-70 font-medium">Bấm vào thẻ để quay lại</div>
             </div>
           </motion.div>
         </div>
