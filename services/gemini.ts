@@ -37,9 +37,9 @@ export interface StudyGuide {
 const apiKey = process.env.GEMINI_API_KEY || "missing_api_key";
 const ai = new GoogleGenAI({ apiKey });
 
-const MODEL_PRO = "gemini-3.1-pro-preview";
-const MODEL_FLASH = "gemini-3-flash-preview";
-const MODEL_TTS = "gemini-3.1-flash-tts-preview";
+const MODEL_PRO = "gemini-1.5-pro";
+const MODEL_FLASH = "gemini-1.5-flash";
+const MODEL_TTS = "gemini-1.5-flash";
 
 export const generateStudyGuide = async (grade: Grade, subject: Subject, semester: 1 | 2, curriculum: Curriculum): Promise<StudyGuide | null> => {
   const cacheId = `guide-${grade}-${subject}-${semester}-${curriculum}`;
@@ -62,7 +62,7 @@ export const generateStudyGuide = async (grade: Grade, subject: Subject, semeste
         tools: [{ googleSearch: {} }]
       }
     });
-    const data = JSON.parse(cleanJson(response.text));
+    const data = JSON.parse(cleanJson(response.text || "{}"));
     const result = { id: `${grade}-${subject}-${semester}-${curriculum}`, grade, subject, semester, lessons: data.lessons };
     
     // Save to server cache
@@ -114,7 +114,7 @@ export const generateLessonDetails = async (grade: Grade, subject: Subject, less
         tools: [{ googleSearch: {} }]
       }
     });
-    const result = JSON.parse(cleanJson(response.text));
+    const result = JSON.parse(cleanJson(response.text || "{}"));
 
     // Save to server cache
     await fetch('/api/lessons', {
@@ -179,7 +179,7 @@ export const generateMazeQuestions = async (grade: Grade, subject: Subject, diff
     }
   });
   
-  return JSON.parse(cleanJson(response.text)).questions;
+  return JSON.parse(cleanJson(response.text || "{}")).questions;
 };
 
 export const getDeepExplanation = async (question: Question, userAnswer: string): Promise<string> => {
@@ -308,7 +308,7 @@ export const generateMindMap = async (grade: Grade, subject: Subject, lessonTitl
       }
     });
 
-    const result = JSON.parse(cleanJson(response.text)).nodes;
+    const result = JSON.parse(cleanJson(response.text || "{}")).nodes;
     // Lưu cache lên server
     await fetch('/api/lessons', {
       method: 'POST',
@@ -371,7 +371,7 @@ export const analyzeThinkingError = async (
       }
     });
 
-    const parsed = JSON.parse(cleanJson(response.text));
+    const parsed = JSON.parse(cleanJson(response.text || "{}"));
     return {
       errorType: parsed.errorType || "Sai sót cẩu thả",
       shortAnalysis: parsed.shortAnalysis || "Bạn có thể đã vội vàng chọn đáp án này mà chưa đối chiếu đủ các dữ kiện.",
