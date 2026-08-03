@@ -10,16 +10,63 @@ interface Message {
   text: string;
 }
 
+const STORAGE_KEY = '24hoc-ai-chat-messages';
+const QUICK_PROMPTS = [
+  { label: 'Cách học hiệu quả', text: 'Hãy gợi ý cho tôi cách học hiệu quả cho một chủ đề mới.' },
+  { label: 'Tạo câu hỏi ôn tập', text: 'Hãy tạo cho tôi 5 câu hỏi ôn tập ngắn về chủ đề mà tôi đang học.' },
+  { label: 'Giải thích nhanh', text: 'Hãy giải thích một khái niệm khó bằng ngôn ngữ dễ hiểu.' }
+];
+
+const getFallbackResponse = (userMessage: string) => {
+  const lower = userMessage.toLowerCase();
+
+  if (lower.includes('học') || lower.includes('study')) {
+    return 'Mình khuyên bạn nên chia nhỏ nội dung thành từng phần, học theo chuỗi 25-5-5 và ôn lại vào cuối ngày. Nếu muốn, mình có thể đề xuất một kế hoạch học riêng cho bạn.';
+  }
+
+  if (lower.includes('câu hỏi') || lower.includes('quiz')) {
+    return 'Mình có thể giúp bạn tạo bộ câu hỏi ôn tập nhanh. Hãy cho mình biết môn học và mức độ khó bạn muốn nhé.';
+  }
+
+  if (lower.includes('toán') || lower.includes('lý') || lower.includes('hóa') || lower.includes('văn')) {
+    return 'Mình có thể hỗ trợ giải thích khái niệm, gợi ý mẹo nhớ và tạo bài tập mini cho môn đó. Cho mình biết chủ đề cụ thể bạn muốn học.';
+  }
+
+  return 'Mình đang ở chế độ demo và có thể hỗ trợ bạn với lời khuyên học tập nhanh. Khi API Gemini được cấu hình, mình sẽ trả lời chi tiết hơn.';
+};
+
 const AIChatFloating: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', text: 'Xin chào! Tôi là Trợ lý AI của 24hoc. Bạn có câu hỏi gì về bài học hay bất kỳ chủ đề nào không? Tôi luôn sẵn sàng hỗ trợ bạn!' }
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (typeof window === 'undefined') {
+      return [{ role: 'model', text: 'Xin chào! Tôi là Trợ lý AI của 24hoc. Bạn có câu hỏi gì về bài học hay bất kỳ chủ đề nào không? Tôi luôn sẵn sàng hỗ trợ bạn!' }];
+    }
+
+    try {
+      const stored = window.localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as Message[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (error) {
+      console.warn('Không thể đọc lịch sử chat:', error);
+    }
+
+    return [{ role: 'model', text: 'Xin chào! Tôi là Trợ lý AI của 24hoc. Bạn có câu hỏi gì về bài học hay bất kỳ chủ đề nào không? Tôi luôn sẵn sàng hỗ trợ bạn!' }];
+  });
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [activeSpeechText, setActiveSpeechText] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    }
+  }, [messages]);
 
   useEffect(() => {
     return () => {
@@ -84,16 +131,28 @@ const AIChatFloating: React.FC = () => {
     setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
     setIsLoading(true);
 
+    const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
+
+    setMessages(prev => [...prev, { role: 'model', text: '' }]);
+
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+      if (!apiKey) {
+        const fallbackReply = getFallbackResponse(userMessage);
+        setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1] = { role: 'model', text: fallbackReply };
+          return newMessages;
+        });
+        return;
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
       const chat = ai.chats.create({
         model: "gemini-3-flash-preview",
         config: {
           systemInstruction: "Bạn là một trợ lý giáo dục thông minh, thân thiện và nhiệt huyết của nền tảng 24hoc. Bạn có kiến thức sâu rộng về mọi lĩnh vực từ Toán, Lý, Hóa đến Văn học, Lịch sử và đời sống. Hãy trả lời câu hỏi của người dùng một cách chi tiết, dễ hiểu và truyền cảm hứng học tập. Sử dụng Markdown để định dạng câu trả lời đẹp mắt.",
         },
       });
-
-      setMessages(prev => [...prev, { role: 'model', text: '' }]);
       
       const result = await chat.sendMessageStream({ message: userMessage });
       let fullText = '';
@@ -109,7 +168,11 @@ const AIChatFloating: React.FC = () => {
       }
     } catch (error) {
       console.error("AI Chat Error:", error);
-      setMessages(prev => [...prev, { role: 'model', text: "Rất tiếc, đã có lỗi xảy ra khi kết nối với trí tuệ nhân tạo. Vui lòng thử lại sau nhé!" }]);
+      setMessages(prev => {
+        const newMessages = [...prev];
+        newMessages[newMessages.length - 1] = { role: 'model', text: "Rất tiếc, đã có lỗi xảy ra khi kết nối với trí tuệ nhân tạo. Vui lòng thử lại sau nhé!" };
+        return newMessages;
+      });
     } finally {
       setIsLoading(false);
     }
@@ -226,6 +289,18 @@ const AIChatFloating: React.FC = () => {
                     >
                       <Send size={14} />
                     </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {QUICK_PROMPTS.map((prompt) => (
+                      <button
+                        key={prompt.label}
+                        type="button"
+                        onClick={() => setInput(prompt.text)}
+                        className="rounded-full border border-zinc-200 dark:border-zinc-700 px-2.5 py-1 text-[11px] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                      >
+                        {prompt.label}
+                      </button>
+                    ))}
                   </div>
                   <p className="text-[10px] text-center text-muted mt-2">
                     AI có thể đưa ra thông tin chưa chính xác. Hãy kiểm tra lại nhé!

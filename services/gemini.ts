@@ -34,7 +34,7 @@ export interface StudyGuide {
 }
 
 // Correct API key usage for Vite. Fallback to empty string to prevent top-level crash if env is not set in Vercel.
-const apiKey = process.env.GEMINI_API_KEY || "missing_api_key";
+const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || "missing_api_key";
 const ai = new GoogleGenAI({ apiKey });
 
 const MODEL_PRO = "gemini-1.5-pro";
