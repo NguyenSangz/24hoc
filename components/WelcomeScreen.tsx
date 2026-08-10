@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { statsStorage, getInventory, updateInventory } from '../utils/storage';
 import { questManager, DAILY_QUESTS } from '../utils/quests';
 import { sound } from '../utils/audio';
-import { generateSpeech, getStudyGuide, getLessonDetails, getMindMap, sendChatMessage } from '../services/gemini.client';
+import { generateSpeech, getStudyGuide, getLessonDetails, getMindMap, sendChatMessage } from '../services/deepseek.client';
 import { toast } from 'sonner';
 import Leaderboard from './Leaderboard';
 import ActivityFeed from './ActivityFeed';

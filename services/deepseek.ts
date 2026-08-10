@@ -37,7 +37,7 @@ export interface StudyGuide {
 let aiClient: GoogleGenAI | null = null;
 const getAi = (): GoogleGenAI => {
   if (!aiClient) {
-    const apiKey = process.env.GEMINI_API_KEY || '';
+    const apiKey = process.env.DEEPSEEK_API_KEY || '';
     aiClient = new GoogleGenAI({ apiKey });
   }
   return aiClient;

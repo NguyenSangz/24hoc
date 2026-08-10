@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Bot, Loader2, Sparkles, User, Minimize2, Maximize2, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Markdown from 'react-markdown';
-import { sendChatMessage } from '../services/gemini.client';
+import { sendChatMessage } from '../services/deepseek.client';
 
 interface Message {
   role: 'user' | 'model';

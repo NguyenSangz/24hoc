@@ -21,32 +21,32 @@ const fetchJson = async (endpoint: string, body: any) => {
 };
 
 export const getDeepExplanation = async (question: Question, userAnswer: string) => {
-  const data = await fetchJson('/api/gemini/deep-explanation', { question, userAnswer });
+  const data = await fetchJson('/api/deepseek/deep-explanation', { question, userAnswer });
   return data.text || '';
 };
 
 export const getAIHint = async (question: Question) => {
-  const data = await fetchJson('/api/gemini/ai-hint', { question });
+  const data = await fetchJson('/api/deepseek/ai-hint', { question });
   return data.text || '';
 };
 
 export const getAILearningHistoryThinkingAnalysis = async (question: Question, userAnswer: string, thinkingErrors: any[]) => {
-  const data = await fetchJson('/api/gemini/analyze-thinking', { question, userAnswer, thinkingErrors });
+  const data = await fetchJson('/api/deepseek/analyze-thinking', { question, userAnswer, thinkingErrors });
   return data.text || '';
 };
 
 export const getStudyGuide = async (grade: Grade, subject: Subject, semester: 1 | 2, curriculum: Curriculum) => {
-  const data = await fetchJson('/api/gemini/lesson-guide', { grade, subject, semester, curriculum });
+  const data = await fetchJson('/api/deepseek/lesson-guide', { grade, subject, semester, curriculum });
   return data.result || null;
 };
 
 export const getLessonDetails = async (grade: Grade, subject: Subject, lessonTitle: string, curriculum: Curriculum) => {
-  const data = await fetchJson('/api/gemini/lesson-details', { grade, subject, lessonTitle, curriculum });
+  const data = await fetchJson('/api/deepseek/lesson-details', { grade, subject, lessonTitle, curriculum });
   return data.result || null;
 };
 
 export const getMindMap = async (grade: Grade, subject: Subject, lessonTitle: string, curriculum: Curriculum) => {
-  const data = await fetchJson('/api/gemini/mindmap', { grade, subject, lessonTitle, curriculum });
+  const data = await fetchJson('/api/deepseek/mindmap', { grade, subject, lessonTitle, curriculum });
   return data.result || null;
 };
 
@@ -55,17 +55,17 @@ export const sendChatMessage = async (
   lessonTitle?: string,
   lessonContent?: string
 ) => {
-  const data = await fetchJson('/api/gemini/chat', { messages, lessonTitle, lessonContent });
+  const data = await fetchJson('/api/deepseek/chat', { messages, lessonTitle, lessonContent });
   return data.text || '';
 };
 
 export const generateSpeech = async (text: string) => {
-  const data = await fetchJson('/api/gemini/speech', { text });
+  const data = await fetchJson('/api/deepseek/speech', { text });
   return data.audioBase64 || null;
 };
 
 export const generateMazeQuestions = async (grade: Grade, subject: Subject, difficulty: string, count: number) => {
-  const data = await fetchJson('/api/gemini/maze-questions', { grade, subject, difficulty, count });
+  const data = await fetchJson('/api/deepseek/maze-questions', { grade, subject, difficulty, count });
   return data.questions || [];
 };
 
@@ -76,11 +76,11 @@ export const analyzeThinkingError = async (
   correctAnswerIndex: number,
   explanation: string
 ) => {
-  const data = await fetchJson('/api/gemini/analyze-error', { questionText, options, userAnswerIndex, correctAnswerIndex, explanation });
+  const data = await fetchJson('/api/deepseek/analyze-error', { questionText, options, userAnswerIndex, correctAnswerIndex, explanation });
   return data.analysis || null;
 };
 
-export type GeminiChatMessage = ChatPayloadMessage;
+export type DeepseekChatMessage = ChatPayloadMessage;
 
 export default {
   getDeepExplanation,

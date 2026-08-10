@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { GameState, NodeStatus, MazeNode, NodeType, GameSettings, Grade, Subject, User, Difficulty, GameOverReason } from './types';
-import { generateMazeQuestions, analyzeThinkingError } from './services/gemini.client';
+import { generateMazeQuestions, analyzeThinkingError } from './services/deepseek.client';
 import { auth, gameStorage, statsStorage } from './utils/storage';
 import { questManager } from './utils/quests';
 import { sound } from './utils/audio';

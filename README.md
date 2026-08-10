@@ -66,10 +66,10 @@
    
    Tạo file `.env.local` trong thư mục gốc:
    ```env
-   GEMINI_API_KEY=your_gemini_api_key_here
+   DEEPSEEK_API_KEY=your_deepseek_api_key_here
    ```
    
-   Lấy Gemini API key từ [Google AI Studio](https://ai.google.dev)
+   Lấy DeepSeek API key từ [Google AI Studio](https://ai.google.dev)
 
 4. **Chạy máy chủ phát triển**
    ```bash
