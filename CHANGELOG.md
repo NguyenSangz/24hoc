@@ -4,7 +4,43 @@ Tất cả các thay đổi, tính năng mới và cải tiến quan trọng đ�
 
 ---
 
-## [Phiên bản v1.9.5] - 2026-06-07 (Mới nhất)
+## [Phiên bản v2.2.0] - 2026-08-10 (Mới nhất)
+
+### 1. Khởi tạo Trí tuệ Nhân tạo An Toàn & Kháng Lỗi Kết Nối (Resilient AI SDK & Stream Handling)
+*   **Chế độ Khởi tạo Lười (Lazy SDK Initialization):** Chuyển đổi toàn bộ lệnh khởi tạo GoogleGenAI sang cơ chế `getAi()` khởi tạo lười (lazy getter) trong `services/gemini.ts`. Đảm bảo ứng dụng không bao giờ bị đứng hoặc văng crash ở giai đoạn tải trang khi môi trường chưa truyền API Key.
+*   **Xử lý Luồng Tin nhắn Trò chuyện Nổi (Resilient Floating AI Stream):** Khắc phục lỗi tạo các khối tin nhắn rỗng trong `AIChatFloating` khi kết nối luồng mạng bị đứt giữa chừng. Giờ đây, hệ thống tự động thay thế khối phản hồi dở dang bằng thông báo hướng dẫn thử lại thân thiện.
+
+---
+
+## [Phiên bản v2.1.0] - 2026-08-10
+
+### 1. Nâng cấp Bàn phím Ôn tập Flashcards & Trải nghiệm Học thuật Siêu tốc (Smart Flashcard Navigation)
+*   **Điều hướng Flashcard bằng phím bấm:** Tích hợp bộ lắng nghe sự kiện phím chuyên dụng khi mở tính năng Flashcards trong Bài học:
+    *   Phím `Mũi tên Trái (←)` / `Mũi tên Phải (→)` để lật chuyển nhanh giữa các thẻ thuật ngữ học thuật mà không cần di chuột.
+    *   Phím `Phím Cách (Space)` hoặc `Mũi tên Lên/Xuống (↑/↓)` để lật mặt thẻ (Term ↔ Definition) tức thì.
+*   **Huy hiệu Phím tắt Trực quan:** Bổ sung các nhãn bàn phím `<kbd>` thiết kế tinh gọn bên dưới thanh điều khiển Flashcards, giúp học sinh nắm bắt thao tác và học thuộc bài nhanh hơn trên máy tính.
+
+---
+
+## [Phiên bản v2.0.0] - 2026-08-10
+
+### 1. Nâng cấp Trải nghiệm Phím tắt Toàn diện & Tương tác Tốc độ cao (Pro Keyboard Shortcuts System)
+*   **Thao tác trả lời bằng phím bấm:** Bổ sung bộ lắng nghe sự kiện bàn phím nhanh trong `QuestionModal`:
+    *   Sử dụng phím `1`, `2`, `3`, `4` hoặc `A`, `B`, `C`, `D` để chọn đáp án tương ứng tức thì mà không cần dùng chuột.
+    *   Phím `Enter ↵` tự động kích hoạt nút **XÁC NHẬN** (hoặc **TIẾP TỤC** / **THỬ LẠI** sau khi nộp bài).
+    *   Phím `Escape` đóng hộp thoại nhanh trong chế độ xem lại bài tập.
+*   **Hệ thống nhãn phím trực quan:** Hiển thị thêm các huy hiệu nhãn phím bấm `Phím A / 1`, `Phím B / 2`, `(Enter ↵)` rõ ràng trên từng nút lựa chọn và nút xác nhận, giúp người dùng thao tác mượt mà trên máy tính.
+
+### 2. Sửa lỗi Đồng bộ dữ liệu & Hỗ trợ Đăng nhập Đa thiết bị (Multi-Device Sync & IndexedDB Restoration)
+*   **Xử lý lưu trữ IndexedDB:** Khắc phục lỗi chặn đăng nhập trên thiết bị mới khi dữ liệu cục bộ chưa được khởi tạo. Phương thức `auth.login` tự động kéo thông tin danh tính an toàn từ máy chủ (`GET /api/users/:username`) về lưu trữ cục bộ trước khi xác minh mật mã.
+*   **Bảo vệ toàn vẹn tài sản người dùng:** Đồng bộ tối ưu dữ liệu bảng xếp hạng và kho đồ cá nhân, loại bỏ nguy cơ thất thoát xu hay tiến trình học tập khi chuyển đổi giữa các trình duyệt.
+
+### 3. Chuẩn hóa Tương phản Đa Chủ đề Sáng/Tối (Unified Dark & Light Theme Accessibility)
+*   **Tích điểm danh & Thẻ ghi nhớ (Flashcard):** Chuyển đổi toàn bộ các lớp màu cố định tĩnh (như `text-white`) sang các biến tương phản tự điều chỉnh `text-primary-text` và `bg-current/15`, giúp các yếu tố giao diện (như dấu kiểm hoàn thành `✓`, thanh tiến độ nhiệm vụ, biểu tượng loa đọc âm) hiển thị sắc nét trên cả giao diện Sáng (Light mode) và Tối (Dark mode).
+
+---
+
+## [Phiên bản v1.9.5] - 2026-06-07
 
 ### 1. Sửa lỗi Đồng bộ dữ liệu & Hỗ trợ Đăng nhập Đa thiết bị (Multi-Device Login & State Restoration)
 *   **Xử lý lưu trữ IndexedDB:** Sửa lỗi chặn đăng nhập trên thiết bị mới do trạng thái trắng dữ liệu cục bộ ban đầu. Giờ đây, phương thức đăng nhập `auth.login` ưu tiên thực hiện kéo thông tin danh tính an toàn từ máy chủ (`GET /api/users/:username`) về lưu trữ cục bộ trước khi so sánh mật mã, đảm bảo đồng hành liền mạch trên mọi nền tảng trình duyệt và thiết bị khác nhau.

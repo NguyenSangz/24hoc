@@ -98,6 +98,31 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ user, activeTab, onStart,
   const [activeCardIndex, setActiveCardIndex] = useState(0);
   const [isCardFlipped, setIsCardFlipped] = useState(false);
 
+  // Keyboard Navigation Listener for Flashcards
+  useEffect(() => {
+    if (!isFlashcardsOpen) return;
+
+    const handleFlashcardKeys = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setActiveCardIndex(prev => Math.max(0, prev - 1));
+        setIsCardFlipped(false);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setActiveCardIndex(prev => prev + 1);
+        setIsCardFlipped(false);
+      } else if (e.key === ' ' || e.key === 'Space' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        setIsCardFlipped(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleFlashcardKeys);
+    return () => window.removeEventListener('keydown', handleFlashcardKeys);
+  }, [isFlashcardsOpen]);
+
   // Chat & TTS State
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -811,24 +836,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ user, activeTab, onStart,
       return { title: 'Học Viên Tập Sự', color: 'text-muted' };
     };
     const rank = getRankTitle(level);
-    const questSummaries = DAILY_QUESTS.map((quest) => {
-      let current = 0;
-      if (quest.type === 'attendance') {
-        current = questProgress.attendanceClaimed ? 1 : 0;
-      } else if (quest.type === 'questions') {
-        current = questProgress.questionsCount;
-      } else if (quest.type === 'lessons') {
-        current = questProgress.lessonsCount;
-      } else if (quest.type === 'purchases') {
-        current = questProgress.purchasesCount;
-      }
-
-      const isCompleted = current >= quest.target;
-      const isClaimed = questProgress.claimedQuestIds.includes(quest.id);
-      return { quest, current, isCompleted, isClaimed, percent: Math.min(100, Math.round((current / quest.target) * 100)) };
-    });
-    const nextQuest = questSummaries.find((item) => !item.isClaimed && !item.isCompleted) || questSummaries.find((item) => !item.isClaimed) || null;
-    const completedQuestCount = questSummaries.filter((item) => item.isCompleted && !item.isClaimed).length;
 
     const chartData = React.useMemo(() => {
       const history = stats?.scoreHistory || [];
@@ -994,19 +1001,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ user, activeTab, onStart,
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column: Quick Actions & Activity */}
             <div className="lg:col-span-2 space-y-8">
-               <div className="rounded-[2rem] border border-primary/20 bg-gradient-to-r from-primary/10 via-background to-secondary/10 p-5 shadow-sm">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary">Mục tiêu hôm nay</p>
-                        <h3 className="text-lg font-black text-text">{completedQuestCount > 0 ? `${completedQuestCount} nhiệm vụ đã sẵn sàng để nhận thưởng` : 'Hoàn thành một thử thách để mở khóa phần thưởng mới'}</h3>
-                     </div>
-                     <div className="rounded-2xl border border-primary/20 bg-background/80 px-4 py-3 text-left min-w-[180px]">
-                        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-muted">Tiếp theo</p>
-                        <p className="text-sm font-bold text-text">{nextQuest ? nextQuest.quest.title : 'Tất cả nhiệm vụ đã hoàn tất'}</p>
-                     </div>
-                  </div>
-               </div>
-
                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6">
                 {[
                   { id: 'practice', title: 'Luyện tập', icon: Play, color: 'text-blue-600', bg: 'bg-blue-500/10' },
@@ -1532,6 +1526,16 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ user, activeTab, onStart,
           >
             {activeCardIndex === list.length - 1 ? "Hoàn thành" : "Tiếp theo"}
           </button>
+        </div>
+
+        {/* Desktop Keyboard Hints */}
+        <div className="mt-5 hidden sm:flex items-center gap-4 text-[11px] font-mono text-muted/70">
+          <span className="flex items-center gap-1">
+            <kbd className="px-1.5 py-0.5 rounded-md bg-surface border border-border text-text font-bold shadow-xs">Space</kbd> / <kbd className="px-1.5 py-0.5 rounded-md bg-surface border border-border text-text font-bold shadow-xs">↑↓</kbd> Lật thẻ
+          </span>
+          <span className="flex items-center gap-1">
+            <kbd className="px-1.5 py-0.5 rounded-md bg-surface border border-border text-text font-bold shadow-xs">←</kbd> <kbd className="px-1.5 py-0.5 rounded-md bg-surface border border-border text-text font-bold shadow-xs">→</kbd> Đổi thẻ
+          </span>
         </div>
       </div>
     );

@@ -1,0 +1,7 @@
+MM CHANGELOG.md
+ M components/AIChatFloating.tsx
+M  components/QuestionModal.tsx
+ M components/WelcomeScreen.tsx
+M  package-lock.json
+ M services/gemini.ts
+?? status.txt

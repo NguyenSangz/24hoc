@@ -94,6 +94,53 @@ const QuestionModal: React.FC<QuestionModalProps> = ({ question, onAnswer, onClo
     loadInv();
   }, [question.id]);
 
+  const isCorrect = selectedOption === question.correctAnswerIndex;
+
+  // Keyboard Shortcuts Listener for fast desktop navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+
+      const key = e.key.toUpperCase();
+
+      if (!isSubmitted && !isReview) {
+        if (key === 'A' || key === '1') {
+          if (question.options[0] !== undefined) { sound.playClick(); setSelectedOption(0); }
+        } else if (key === 'B' || key === '2') {
+          if (question.options[1] !== undefined) { sound.playClick(); setSelectedOption(1); }
+        } else if (key === 'C' || key === '3') {
+          if (question.options[2] !== undefined) { sound.playClick(); setSelectedOption(2); }
+        } else if (key === 'D' || key === '4') {
+          if (question.options[3] !== undefined) { sound.playClick(); setSelectedOption(3); }
+        } else if (e.key === 'Enter' && selectedOption !== null) {
+          e.preventDefault();
+          setIsSubmitted(true);
+          if (selectedOption === question.correctAnswerIndex) {
+            sound.playCorrect();
+          } else {
+            sound.playIncorrect();
+          }
+        }
+      } else {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          sound.playClick();
+          onAnswer(isCorrect, selectedOption);
+        }
+      }
+
+      if (e.key === 'Escape' && (isSubmitted || isReview)) {
+        e.preventDefault();
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedOption, isSubmitted, isReview, question, isCorrect, onAnswer, onClose]);
+
   const handleAskAI = async () => {
     if (inventory.coins < 50 && !isReview) {
         toast.error("Bạn cần ít nhất 50 xu để sử dụng tư duy sâu!");
@@ -149,8 +196,6 @@ const QuestionModal: React.FC<QuestionModalProps> = ({ question, onAnswer, onClo
       setIsAnalyzingThinking(false);
     }
   };
-
-  const isCorrect = selectedOption === question.correctAnswerIndex;
 
   return (
     <motion.div 
@@ -239,7 +284,7 @@ const QuestionModal: React.FC<QuestionModalProps> = ({ question, onAnswer, onClo
            <div className="mb-6 md:mb-8 w-full h-32 md:h-40 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden relative border border-border bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center shadow-inner">
               <Brain size={60} className="text-primary/20 md:w-[80px] md:h-[80px]" />
               <div className="absolute inset-0 flex items-center justify-center">
-                 <div className="px-4 md:px-5 py-2 md:py-2.5 bg-white/10 dark:bg-black/20 backdrop-blur-md rounded-xl md:rounded-2xl border border-white/20 text-[10px] md:text-xs font-black text-white uppercase tracking-[0.2em] md:tracking-[0.3em] shadow-2xl">
+                 <div className="px-4 md:px-5 py-2 md:py-2.5 bg-surface/85 dark:bg-zinc-900/85 backdrop-blur-md rounded-xl md:rounded-2xl border border-border text-[10px] md:text-xs font-black text-text uppercase tracking-[0.2em] md:tracking-[0.3em] shadow-xl">
                     Thử thách trí tuệ AI
                  </div>
               </div>
@@ -280,13 +325,20 @@ const QuestionModal: React.FC<QuestionModalProps> = ({ question, onAnswer, onClo
                     }}
                     className={btnClass}
                   >
-                    <div className="flex items-center gap-3 md:gap-4">
-                      <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl flex items-center justify-center text-xs md:text-sm font-black border-2 transition-colors ${
-                        isSelected ? 'bg-primary text-primary-text border-primary' : 'bg-surface border-border text-muted group-hover:border-primary/40'
-                      }`}>
-                        {String.fromCharCode(65 + i)}
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-3 md:gap-4">
+                        <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg md:rounded-xl flex items-center justify-center text-xs md:text-sm font-black border-2 transition-colors ${
+                          isSelected ? 'bg-primary text-primary-text border-primary' : 'bg-surface border-border text-muted group-hover:border-primary/40'
+                        }`}>
+                          {String.fromCharCode(65 + i)}
+                        </div>
+                        <span className="text-base md:text-lg font-medium">{opt}</span>
                       </div>
-                      <span className="text-base md:text-lg font-medium">{opt}</span>
+                      {!showResult && (
+                        <span className="hidden sm:inline-block text-[10px] font-mono px-2 py-0.5 rounded-md bg-background/80 border border-border text-muted opacity-60">
+                          Phím {String.fromCharCode(65 + i)} / {i + 1}
+                        </span>
+                      )}
                     </div>
                     {showResult && isCorrectOpt && (
                       <div className="absolute right-6 top-1/2 -translate-y-1/2">
@@ -453,7 +505,7 @@ const QuestionModal: React.FC<QuestionModalProps> = ({ question, onAnswer, onClo
                   disabled={selectedOption === null}
                   className="w-full sm:w-auto btn-primary px-8 md:px-12 py-3.5 md:py-4 rounded-2xl font-bold text-base md:text-lg shadow-xl shadow-primary/20 disabled:opacity-30 flex items-center justify-center gap-2 group"
                 >
-                  XÁC NHẬN
+                  XÁC NHẬN <span className="hidden sm:inline-block text-[11px] font-mono font-normal opacity-80">(Enter ↵)</span>
                   <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                 </button>
               ) : (
@@ -466,7 +518,7 @@ const QuestionModal: React.FC<QuestionModalProps> = ({ question, onAnswer, onClo
                     isCorrect ? 'bg-success shadow-success/20' : 'bg-danger shadow-danger/20'
                   }`}
                 >
-                  {isCorrect ? 'TIẾP TỤC' : 'THỬ LẠI'}
+                  {isCorrect ? 'TIẾP TỤC' : 'THỬ LẠI'} <span className="hidden sm:inline-block text-[11px] font-mono font-normal opacity-80">(Enter ↵)</span>
                   <ArrowRight size={20} />
                 </button>
               )}

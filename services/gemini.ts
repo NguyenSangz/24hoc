@@ -33,13 +33,19 @@ export interface StudyGuide {
   lessons: Lesson[];
 }
 
-// Correct API key usage for Vite. Fallback to empty string to prevent top-level crash if env is not set in Vercel.
-const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || "missing_api_key";
-const ai = new GoogleGenAI({ apiKey });
+// Lazy API client initialization to prevent module-load crashes when API key is unconfigured
+let aiClient: GoogleGenAI | null = null;
+const getAi = (): GoogleGenAI => {
+  if (!aiClient) {
+    const apiKey = process.env.GEMINI_API_KEY || '';
+    aiClient = new GoogleGenAI({ apiKey });
+  }
+  return aiClient;
+};
 
-const MODEL_PRO = "gemini-1.5-pro";
-const MODEL_FLASH = "gemini-1.5-flash";
-const MODEL_TTS = "gemini-1.5-flash";
+const MODEL_PRO = "gemini-3.1-pro-preview";
+const MODEL_FLASH = "gemini-3-flash-preview";
+const MODEL_TTS = "gemini-3.1-flash-tts-preview";
 
 export const generateStudyGuide = async (grade: Grade, subject: Subject, semester: 1 | 2, curriculum: Curriculum): Promise<StudyGuide | null> => {
   const cacheId = `guide-${grade}-${subject}-${semester}-${curriculum}`;
@@ -54,7 +60,7 @@ export const generateStudyGuide = async (grade: Grade, subject: Subject, semeste
     
     Trả về JSON với cấu trúc: { "lessons": [{ "id": "string", "title": "string", "content": "Mô tả ngắn gọn mục tiêu bài học" }] }`;
     
-    const response = await ai.models.generateContent({
+    const response = await getAi().models.generateContent({
       model: MODEL_PRO,
       contents: prompt,
       config: { 
@@ -62,7 +68,7 @@ export const generateStudyGuide = async (grade: Grade, subject: Subject, semeste
         tools: [{ googleSearch: {} }]
       }
     });
-    const data = JSON.parse(cleanJson(response.text || "{}"));
+    const data = parseAiJson<{ lessons: Lesson[] }>(response);
     const result = { id: `${grade}-${subject}-${semester}-${curriculum}`, grade, subject, semester, lessons: data.lessons };
     
     // Save to server cache
@@ -106,7 +112,7 @@ export const generateLessonDetails = async (grade: Grade, subject: Subject, less
       "quickQuiz": [{ "question": "string", "options": ["string"], "correctAnswerIndex": number }]
     }`;
     
-    const response = await ai.models.generateContent({
+    const response = await getAi().models.generateContent({
       model: MODEL_PRO,
       contents: prompt,
       config: { 
@@ -114,7 +120,7 @@ export const generateLessonDetails = async (grade: Grade, subject: Subject, less
         tools: [{ googleSearch: {} }]
       }
     });
-    const result = JSON.parse(cleanJson(response.text || "{}"));
+    const result = parseAiJson<Lesson>(response);
 
     // Save to server cache
     await fetch('/api/lessons', {
@@ -156,6 +162,13 @@ const cleanJson = (text: string): string => {
   return match ? match[0] : text;
 };
 
+const parseAiJson = <T = any>(response: { text?: string }): T => {
+  const rawText = response.text ?? '';
+  const jsonText = cleanJson(rawText);
+  if (!jsonText) throw new Error('Empty AI response text');
+  return JSON.parse(jsonText) as T;
+};
+
 export const generateMazeQuestions = async (grade: Grade, subject: Subject, difficulty: Difficulty, count: number): Promise<Question[]> => {
   const prompt = `Bạn là một chuyên gia giáo dục hàng đầu Việt Nam, am hiểu sâu sắc chương trình giáo dục phổ thông mới.
   Nhiệm vụ: Tạo ${count} câu hỏi trắc nghiệm chất lượng cao cho học sinh lớp ${grade}, môn ${subject}, mức độ ${difficulty}.
@@ -169,7 +182,7 @@ export const generateMazeQuestions = async (grade: Grade, subject: Subject, diff
 
   Trả về JSON theo định dạng schema đã cung cấp.`;
 
-  const response = await ai.models.generateContent({
+  const response = await getAi().models.generateContent({
     model: MODEL_PRO,
     contents: prompt,
     config: { 
@@ -179,7 +192,7 @@ export const generateMazeQuestions = async (grade: Grade, subject: Subject, diff
     }
   });
   
-  return JSON.parse(cleanJson(response.text || "{}")).questions;
+  return parseAiJson<{ questions: Question[] }>(response).questions;
 };
 
 export const getDeepExplanation = async (question: Question, userAnswer: string): Promise<string> => {
@@ -194,7 +207,7 @@ export const getDeepExplanation = async (question: Question, userAnswer: string)
   3. Cung cấp ví dụ thực tế hoặc mẹo ghi nhớ (mnemonic) độc đáo.
   4. Kiểm chứng các sự kiện/số liệu bằng Google Search nếu cần thiết.`;
 
-  const response = await ai.models.generateContent({
+  const response = await getAi().models.generateContent({
     model: MODEL_PRO,
     contents: prompt,
     config: {
@@ -216,7 +229,7 @@ export const getAIHint = async (question: Question): Promise<string> => {
   TUYỆT ĐỐI KHÔNG được nói thẳng đáp án hoặc chỉ số đáp án.
   Hãy viết ngắn gọn, súc tích và khơi gợi tư duy.`;
 
-  const response = await ai.models.generateContent({
+  const response = await getAi().models.generateContent({
     model: MODEL_PRO,
     contents: prompt
   });
@@ -225,7 +238,7 @@ export const getAIHint = async (question: Question): Promise<string> => {
 };
 
 export const createLessonChatSession = (grade: Grade, subject: Subject, lessonTitle: string, lessonContent: string): Chat => {
-  return ai.chats.create({
+  return getAi().chats.create({
     model: MODEL_PRO,
     config: {
       systemInstruction: `Bạn là Gia sư AI 24hoc bậc thầy môn ${subject} lớp ${grade}. 
@@ -238,7 +251,7 @@ export const createLessonChatSession = (grade: Grade, subject: Subject, lessonTi
 
 export const generateSpeech = async (text: string) => {
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAi().models.generateContent({
       model: MODEL_TTS,
       contents: [{ parts: [{ text: `Đọc bài giảng sau bằng tiếng Việt: ${text}` }] }],
       config: {
@@ -300,7 +313,7 @@ export const generateMindMap = async (grade: Grade, subject: Subject, lessonTitl
     }
     Hãy soạn thảo bằng tiếng Việt chuẩn ngữ pháp, súc tích, sinh động và khoa học nhất.`;
 
-    const response = await ai.models.generateContent({
+    const response = await getAi().models.generateContent({
       model: MODEL_PRO,
       contents: prompt,
       config: {
@@ -308,7 +321,7 @@ export const generateMindMap = async (grade: Grade, subject: Subject, lessonTitl
       }
     });
 
-    const result = JSON.parse(cleanJson(response.text || "{}")).nodes;
+    const result = parseAiJson<{ nodes: MindMapNode[] }>(response).nodes;
     // Lưu cache lên server
     await fetch('/api/lessons', {
       method: 'POST',
@@ -363,7 +376,7 @@ export const analyzeThinkingError = async (
       "suggestion": "Mẹo hữu ích 1 câu giúp học sinh không lặp lại lỗi này."
     }`;
 
-    const response = await ai.models.generateContent({
+    const response = await getAi().models.generateContent({
       model: MODEL_PRO,
       contents: prompt,
       config: {
@@ -371,7 +384,7 @@ export const analyzeThinkingError = async (
       }
     });
 
-    const parsed = JSON.parse(cleanJson(response.text || "{}"));
+    const parsed = parseAiJson<ThinkingErrorAnalysis>(response);
     return {
       errorType: parsed.errorType || "Sai sót cẩu thả",
       shortAnalysis: parsed.shortAnalysis || "Bạn có thể đã vội vàng chọn đáp án này mà chưa đối chiếu đủ các dữ kiện.",
@@ -414,7 +427,7 @@ export const getAILearningHistoryThinkingAnalysis = async (
     3. **Tái thiết lập hệ tri thức**: Giải thích nguyên lý gốc rễ bản chất của bài học/câu hỏi hiện tại một cách sáng tỏ nhất.
     4. **Bản đồ hành động (Action Plan)**: Đưa ra 2-3 lời khuyên rèn luyện thói quen tư duy chỉnh chu thực tế, dễ thực hiện để học sinh phòng tránh.`;
 
-    const response = await ai.models.generateContent({
+    const response = await getAi().models.generateContent({
       model: MODEL_PRO,
       contents: prompt,
       config: {
