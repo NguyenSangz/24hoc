@@ -4,7 +4,7 @@ import { Question, NodeType } from '../types';
 import { X, CheckCircle, XCircle, Eye, Bot, Sparkles, Video, Skull, Shield, Zap, Clock, Brain, Loader2, ArrowRight, Coins, Trophy, Volume2, VolumeX } from 'lucide-react';
 import { auth, getInventory, updateInventory, statsStorage } from '../utils/storage';
 import { sound } from '../utils/audio';
-import { getDeepExplanation, getAIHint, getAILearningHistoryThinkingAnalysis } from '../services/gemini';
+import { getDeepExplanation, getAIHint, getAILearningHistoryThinkingAnalysis } from '../services/gemini.client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import Markdown from 'react-markdown';

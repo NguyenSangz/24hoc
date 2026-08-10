@@ -4,6 +4,15 @@ Tất cả các thay đổi, tính năng mới và cải tiến quan trọng đ�
 
 ---
 
+## [Phiên bản v2.3.1] - 2026-08-11
+
+### 1. Tách rõ AI client/server + Khắc phục lỗi bundling SDK
+*   **Tách wrapper client-side cho Gemini:** Thêm `services/gemini.client.ts` — các hàm gọi AI giờ thực hiện qua các endpoint server (`/api/gemini/*`) để tránh đóng gói `@google/genai` vào bundle frontend.
+*   **Endpoint AI phía server:** Thêm 3 endpoint server-side mới: `/api/gemini/deep-explanation`, `/api/gemini/ai-hint`, `/api/gemini/analyze-thinking` (được đăng ký qua dynamic import trong `server.ts`) để tăng độ bền khi SDK chưa cấu hình.
+*   **Sửa giao diện gọi AI:** Cập nhật `components/QuestionModal.tsx` để sử dụng wrapper client, giảm rủi ro build lỗi và cải thiện resilience khi API key không có tại client.
+*   **Hậu quả & lợi ích:** Giảm kích thước bundle, tránh crash ở thời điểm khởi tạo khi biến môi trường không có API key, và cho phép server kiểm soát quota/khóa API an toàn hơn.
+
+
 ## [Phiên bản v2.3.0] - 2026-08-10 (Mới nhất)
 
 ### 1. Đồng bộ hóa Thiết kế Giao diện Bảng Vinh danh (Unified Leaderboard Styling Tokens)

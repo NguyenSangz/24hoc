@@ -312,6 +312,45 @@ async function startServer() {
     res.json(db.getRecentActivities());
   });
 
+  // --- AI Endpoints (proxy to server-side Gemini service) ---
+  // Note: these endpoints call the server-side services/gemini implementation which uses the
+  // official Google Gemini SDK. They intentionally live on the server to avoid bundling
+  // the SDK into the client bundle.
+  import('./services/gemini').then(gemini => {
+    app.post('/api/gemini/deep-explanation', async (req, res) => {
+      try {
+        const { question, userAnswer } = req.body;
+        const text = await gemini.getDeepExplanation(question, userAnswer);
+        res.json({ text });
+      } catch (err) {
+        console.error('Gemini deep explanation error:', err);
+        res.status(500).json({ error: 'AI error' });
+      }
+    });
+
+    app.post('/api/gemini/ai-hint', async (req, res) => {
+      try {
+        const { question } = req.body;
+        const text = await gemini.getAIHint(question);
+        res.json({ text });
+      } catch (err) {
+        console.error('Gemini hint error:', err);
+        res.status(500).json({ error: 'AI error' });
+      }
+    });
+
+    app.post('/api/gemini/analyze-thinking', async (req, res) => {
+      try {
+        const { question, userAnswer, thinkingErrors } = req.body;
+        const text = await gemini.getAILearningHistoryThinkingAnalysis(question, userAnswer, thinkingErrors || []);
+        res.json({ text });
+      } catch (err) {
+        console.error('Gemini analyze-thinking error:', err);
+        res.status(500).json({ error: 'AI error' });
+      }
+    });
+  }).catch(err => console.error('Failed to load services/gemini on server:', err));
+
   // --- VITE MIDDLEWARE ---
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
