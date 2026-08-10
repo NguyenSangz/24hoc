@@ -44,7 +44,7 @@ const Leaderboard: React.FC = () => {
           <Trophy className="text-yellow-500" />
           Bảng Vàng Vinh Danh
         </h3>
-        <div className="text-xs font-black text-muted uppercase tracking-widest flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 rounded-full">
+        <div className="text-xs font-black text-muted uppercase tracking-widest flex items-center gap-2 bg-surface border border-border px-3 py-1.5 rounded-full">
           <TrendingUp size={14} className="text-primary" />
           Thời gian thực
         </div>
@@ -66,7 +66,7 @@ const Leaderboard: React.FC = () => {
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg ${
               i === 0 ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/20' : 
               i === 1 ? 'bg-zinc-400 text-white' :
-              i === 2 ? 'bg-orange-400 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-muted'
+              i === 2 ? 'bg-orange-400 text-white' : 'bg-surface border border-border text-muted'
             }`}>
               {i < 3 ? <Medal size={20} /> : i + 1}
             </div>

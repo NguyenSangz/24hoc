@@ -4,7 +4,14 @@ Tất cả các thay đổi, tính năng mới và cải tiến quan trọng đ�
 
 ---
 
-## [Phiên bản v2.2.0] - 2026-08-10 (Mới nhất)
+## [Phiên bản v2.3.0] - 2026-08-10 (Mới nhất)
+
+### 1. Đồng bộ hóa Thiết kế Giao diện Bảng Vinh danh (Unified Leaderboard Styling Tokens)
+*   **Chuẩn hóa biến màu chủ đề:** Chuyển đổi các lớp màu tĩnh `bg-zinc-100` / `dark:bg-zinc-800` trong `Leaderboard.tsx` sang các token biến màu `bg-surface` và `border-border`. Đảm bảo các huy hiệu và thẻ thứ hạng hiển thị liền mạch, đồng điệu tuyệt đối trên cả chế độ Tối (Dark mode) lẫn chế độ Sáng (Light mode).
+
+---
+
+## [Phiên bản v2.2.0] - 2026-08-10
 
 ### 1. Khởi tạo Trí tuệ Nhân tạo An Toàn & Kháng Lỗi Kết Nối (Resilient AI SDK & Stream Handling)
 *   **Chế độ Khởi tạo Lười (Lazy SDK Initialization):** Chuyển đổi toàn bộ lệnh khởi tạo GoogleGenAI sang cơ chế `getAi()` khởi tạo lười (lazy getter) trong `services/gemini.ts`. Đảm bảo ứng dụng không bao giờ bị đứng hoặc văng crash ở giai đoạn tải trang khi môi trường chưa truyền API Key.
