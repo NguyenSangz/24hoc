@@ -1,6 +1,6 @@
 
 import { User, GameState, UserStats, Grade, Subject } from '../types';
-import { StudyGuide } from '../services/gemini';
+import type { StudyGuide } from '../services/gemini';
 import { db, STORES } from '../services/db';
 
 // --- SYNC HELPER ---

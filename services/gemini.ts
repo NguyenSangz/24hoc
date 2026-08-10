@@ -48,12 +48,7 @@ const MODEL_FLASH = "gemini-3-flash-preview";
 const MODEL_TTS = "gemini-3.1-flash-tts-preview";
 
 export const generateStudyGuide = async (grade: Grade, subject: Subject, semester: 1 | 2, curriculum: Curriculum): Promise<StudyGuide | null> => {
-  const cacheId = `guide-${grade}-${subject}-${semester}-${curriculum}`;
   try {
-    // Check server cache first
-    const cached = await fetch(`/api/lessons/${cacheId}`).then(r => r.ok ? r.json() : null).catch(() => null);
-    if (cached) return cached;
-
     const prompt = `Bạn là chuyên gia biên soạn sách giáo khoa. 
     Hãy lập danh sách các bài học trọng tâm môn ${subject} lớp ${grade} học kỳ ${semester} theo bộ sách "${curriculum}" (Chương trình GDPT mới).
     Đảm bảo danh sách đầy đủ, chính xác, bám sát mục lục của bộ sách "${curriculum}".
@@ -69,16 +64,7 @@ export const generateStudyGuide = async (grade: Grade, subject: Subject, semeste
       }
     });
     const data = parseAiJson<{ lessons: Lesson[] }>(response);
-    const result = { id: `${grade}-${subject}-${semester}-${curriculum}`, grade, subject, semester, lessons: data.lessons };
-    
-    // Save to server cache
-    await fetch('/api/lessons', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: cacheId, data: result })
-    }).catch(console.error);
-
-    return result;
+    return { id: `${grade}-${subject}-${semester}-${curriculum}`, grade, subject, semester, lessons: data.lessons };
   } catch (err) {
     console.error(err);
     return null;
@@ -86,12 +72,7 @@ export const generateStudyGuide = async (grade: Grade, subject: Subject, semeste
 };
 
 export const generateLessonDetails = async (grade: Grade, subject: Subject, lessonTitle: string, curriculum: Curriculum): Promise<Lesson | null> => {
-  const cacheId = `lesson-${grade}-${subject}-${lessonTitle}-${curriculum}`.replace(/\s+/g, '_');
   try {
-    // Check server cache first
-    const cached = await fetch(`/api/lessons/${cacheId}`).then(r => r.ok ? r.json() : null).catch(() => null);
-    if (cached) return cached;
-
     const prompt = `Bạn là một giáo viên ưu tú. Hãy viết nội dung bài giảng chi tiết, chính xác 100% và dễ hiểu cho bài: "${lessonTitle}" môn ${subject} lớp ${grade} thuộc bộ sách "${curriculum}".
     
     YÊU CẦU:
@@ -120,16 +101,7 @@ export const generateLessonDetails = async (grade: Grade, subject: Subject, less
         tools: [{ googleSearch: {} }]
       }
     });
-    const result = parseAiJson<Lesson>(response);
-
-    // Save to server cache
-    await fetch('/api/lessons', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: cacheId, data: result })
-    }).catch(console.error);
-
-    return result;
+    return parseAiJson<Lesson>(response);
   } catch (err) {
     console.error(err);
     return null;
@@ -249,7 +221,34 @@ export const createLessonChatSession = (grade: Grade, subject: Subject, lessonTi
   });
 };
 
-export const generateSpeech = async (text: string) => {
+export const sendChatMessage = async (
+  messages: { role: 'user' | 'assistant' | 'system'; content: string }[],
+  lessonTitle?: string,
+  lessonContent?: string
+): Promise<string> => {
+  const systemInstruction = `Bạn là Gia sư AI 24hoc thân thiện, sát cánh cùng học sinh trong quá trình học tập. Bài học hiện tại là: "${lessonTitle ?? 'Không xác định'}".
+  Nội dung bài học: ${lessonContent ? lessonContent.slice(0, 1200) : 'Không có nội dung chi tiết.'}`;
+
+  const conversation = messages
+    .map((msg) => {
+      if (msg.role === 'user') return `Học sinh: ${msg.content}`;
+      if (msg.role === 'assistant') return `Gia sư AI: ${msg.content}`;
+      return `Thông tin hệ thống: ${msg.content}`;
+    })
+    .join('\n\n');
+
+  const chat = getAi().chats.create({
+    model: MODEL_PRO,
+    config: {
+      systemInstruction,
+    },
+  });
+
+  const response = await chat.sendMessage({ message: conversation });
+  return response.text || '';
+};
+
+export const generateSpeech = async (text: string): Promise<string | null> => {
   try {
     const response = await getAi().models.generateContent({
       model: MODEL_TTS,
@@ -263,38 +262,15 @@ export const generateSpeech = async (text: string) => {
     });
 
     const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-    if (!base64Audio) return null;
-
-    const decode = (base64: string) => {
-      const binaryString = atob(base64);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-      return bytes;
-    };
-
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-    
-    const dataInt16 = new Int16Array(decode(base64Audio).buffer);
-    const buffer = audioContext.createBuffer(1, dataInt16.length, 24000);
-    const channelData = buffer.getChannelData(0);
-    for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
-
-    const source = audioContext.createBufferSource();
-    source.buffer = buffer;
-    source.connect(audioContext.destination);
-    return source;
+    return typeof base64Audio === 'string' ? base64Audio : null;
   } catch (err) {
-    console.error("TTS Error", err);
+    console.error('TTS Error', err);
     return null;
   }
 };
 
 export const generateMindMap = async (grade: Grade, subject: Subject, lessonTitle: string, curriculum: Curriculum): Promise<MindMapNode[] | null> => {
-  const cacheId = `mindmap-${grade}-${subject}-${lessonTitle}-${curriculum}`.replace(/\s+/g, '_');
   try {
-    const cached = await fetch(`/api/lessons/${cacheId}`).then(r => r.ok ? r.json() : null).catch(() => null);
-    if (cached) return cached;
-
     const prompt = `Bạn là chuyên gia giáo dục thiết kế sơ đồ tư duy (mindmap) cho bài học.
     Hãy phân tích và tạo một sơ đồ tư duy phân cấp chi tiết cho bài: "${lessonTitle}" môn ${subject} lớp ${grade} thuộc bộ sách "${curriculum}".
     Sơ đồ phải có cấu trúc cây rõ ràng, kết nối chặt chẽ và học thuật 100%:
@@ -321,15 +297,7 @@ export const generateMindMap = async (grade: Grade, subject: Subject, lessonTitl
       }
     });
 
-    const result = parseAiJson<{ nodes: MindMapNode[] }>(response).nodes;
-    // Lưu cache lên server
-    await fetch('/api/lessons', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: cacheId, data: result })
-    }).catch(console.error);
-
-    return result;
+    return parseAiJson<{ nodes: MindMapNode[] }>(response).nodes;
   } catch (err) {
     console.error("Failed to generate mindmap:", err);
     return null;

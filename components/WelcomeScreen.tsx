@@ -1,13 +1,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Grade, Subject, GameSettings, User, UserStats, ChatMessage, MasteryData, Difficulty, Curriculum } from '../types';
+import { Grade, Subject, GameSettings, User, UserStats, ChatMessage, MasteryData, Difficulty, Curriculum, Lesson, StudyGuide } from '../types';
 import { Clock, Grid3X3, Zap, Play, Trophy, Star, Crown, Sparkles, Target, Brain, ShoppingBag, BookOpen, FileText, ArrowRight, Coins, ExternalLink, Loader2, ChevronRight, Search, Book, Video, ArrowLeft, List, Globe, MessageCircle, Send, X, Bot, Volume2, Shield, Network, Settings, Code2, GraduationCap, Flame, Heart, Share2, UserCheck, MessageSquare, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { statsStorage, getInventory, updateInventory } from '../utils/storage';
 import { questManager, DAILY_QUESTS } from '../utils/quests';
 import { sound } from '../utils/audio';
-import { createLessonChatSession, generateSpeech, Lesson, generateStudyGuide, generateLessonDetails, StudyGuide, generateMindMap } from '../services/gemini';
-import { Chat } from "@google/genai";
+import { generateSpeech, getStudyGuide, getLessonDetails, getMindMap, sendChatMessage } from '../services/gemini.client';
 import { toast } from 'sonner';
 import Leaderboard from './Leaderboard';
 import ActivityFeed from './ActivityFeed';
@@ -127,7 +126,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ user, activeTab, onStart,
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
-  const [chatSession, setChatSession] = useState<Chat | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -391,31 +390,39 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ user, activeTab, onStart,
   const handleLoadGuide = async (subj: Subject) => {
     setSelectedDocSubject(subj);
     setIsDocLoading(true);
-    // UI feedback for high-accuracy optimization
     setLoadingText(`AI đang tối ưu hóa độ chính xác bài học 100% theo bộ sách ${curriculum} lớp ${docGrade} học kỳ ${docSemester}...`);
-    const guide = await generateStudyGuide(docGrade, subj, docSemester, curriculum);
-    setStudyGuide(guide);
-    setIsDocLoading(false);
+    try {
+      const guide = await getStudyGuide(docGrade, subj, docSemester, curriculum);
+      setStudyGuide(guide);
+    } catch (e) {
+      console.error('Study guide error', e);
+      toast.error('Không thể tải đề cương. Vui lòng thử lại.');
+    } finally {
+      setIsDocLoading(false);
+    }
   };
 
   const handleLoadLesson = async (lessonTitle: string) => {
     setIsDocLoading(true);
     setLoadingText(`AI đang kiểm chứng kiến thức và biên soạn bài giảng chuẩn xác theo bộ sách ${curriculum} lớp ${docGrade}...`);
-    const lesson = await generateLessonDetails(docGrade, selectedDocSubject!, lessonTitle, curriculum);
-    setSelectedLesson(lesson);
-    setQuizAnswers({});
-    setShowQuizResults(false);
-    
-    // Reset secondary feature states
-    setIsMindMapOpen(false);
-    setMindMapNodes(null);
-    setIsFlashcardsOpen(false);
-    setActiveCardIndex(0);
-    setIsCardFlipped(false);
-
-    setIsDocLoading(false);
-    questManager.incrementProgress(user.username, 'lessons', 1);
-    refreshQuests();
+    try {
+      const lesson = await getLessonDetails(docGrade, selectedDocSubject!, lessonTitle, curriculum);
+      setSelectedLesson(lesson);
+      setQuizAnswers({});
+      setShowQuizResults(false);
+      setIsMindMapOpen(false);
+      setMindMapNodes(null);
+      setIsFlashcardsOpen(false);
+      setActiveCardIndex(0);
+      setIsCardFlipped(false);
+      questManager.incrementProgress(user.username, 'lessons', 1);
+      refreshQuests();
+    } catch (e) {
+      console.error('Lesson details error', e);
+      toast.error('Không thể tải chi tiết bài học. Vui lòng thử lại.');
+    } finally {
+      setIsDocLoading(false);
+    }
   };
 
   const handleToggleMindMap = async () => {
@@ -427,9 +434,15 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ user, activeTab, onStart,
     setIsFlashcardsOpen(false); // Close flashcards if open
     if (!mindMapNodes && selectedLesson && selectedDocSubject) {
       setIsMindMapLoading(true);
-      const nodes = await generateMindMap(docGrade, selectedDocSubject, selectedLesson.title, curriculum);
-      setMindMapNodes(nodes);
-      setIsMindMapLoading(false);
+      try {
+        const nodes = await getMindMap(docGrade, selectedDocSubject, selectedLesson.title, curriculum);
+        setMindMapNodes(nodes);
+      } catch (e) {
+        console.error('Mind map error', e);
+        toast.error('Không thể tạo sơ đồ tư duy. Vui lòng thử lại.');
+      } finally {
+        setIsMindMapLoading(false);
+      }
     }
   };
 
@@ -440,28 +453,46 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ user, activeTab, onStart,
       return;
     }
     if (!selectedLesson) return;
-    
+
     setIsSpeaking(true);
     const textToRead = selectedLesson.sections?.map(s => s.content).join('. ') || selectedLesson.content;
-    const source = await generateSpeech(textToRead);
-    if (source) {
-      audioSourceRef.current = source;
+    const base64Audio = await generateSpeech(textToRead);
+
+    if (!base64Audio) {
+      toast.error('Không thể phát audio AI. Vui lòng thử lại sau.');
+      setIsSpeaking(false);
+      return;
+    }
+
+    try {
+      const binaryString = window.atob(base64Audio);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioBuffer = await audioContext.decodeAudioData(bytes.buffer.slice(0));
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContext.destination);
       source.onended = () => setIsSpeaking(false);
+      audioSourceRef.current = source;
       source.start();
-    } else {
+    } catch (err) {
+      console.error('TTS playback error', err);
+      toast.error('Phát âm thanh thất bại.');
       setIsSpeaking(false);
     }
   };
 
   const openChat = () => {
     if (!selectedLesson || !selectedDocSubject) return;
-    const session = createLessonChatSession(docGrade, selectedDocSubject, selectedLesson.title, selectedLesson.content);
-    setChatSession(session);
+    setIsChatOpen(true);
     setChatMessages([]);
   };
 
   const handleSendChat = async () => {
-    if (!chatInput.trim() || !chatSession) return;
+    if (!chatInput.trim()) return;
 
     const userMsg: ChatMessage = { role: 'user', text: chatInput };
     setChatMessages(prev => [...prev, userMsg]);
@@ -469,11 +500,20 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ user, activeTab, onStart,
     setIsChatLoading(true);
 
     try {
-      const response = await chatSession.sendMessage({ message: userMsg.text });
-      const botMsg: ChatMessage = { role: 'model', text: response.text || "Xin lỗi, tôi gặp chút trục trặc." };
+      const responseText = await sendChatMessage(
+        [...chatMessages, userMsg].map(msg => ({
+          role: msg.role === 'user' ? 'user' : 'assistant',
+          content: msg.text
+        })),
+        selectedLesson?.title,
+        selectedLesson?.content
+      );
+
+      const botMsg: ChatMessage = { role: 'model', text: responseText || "Xin lỗi, tôi gặp chút trục trặc." };
       setChatMessages(prev => [...prev, botMsg]);
     } catch (err) {
-      console.error(err);
+      console.error('Chat send error', err);
+      setChatMessages(prev => [...prev, { role: 'model', text: 'Rất tiếc, AI không trả lời được. Vui lòng thử lại.' }]);
     } finally {
       setIsChatLoading(false);
     }
@@ -2169,7 +2209,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ user, activeTab, onStart,
                     <p className="text-[10px] opacity-80">Đang hoạt động (Thinking Mode)</p>
                 </div>
             </div>
-            <button onClick={() => setChatSession(null)} className="p-1 hover:bg-white/20 rounded-full">
+            <button onClick={() => setIsChatOpen(false)} className="p-1 hover:bg-white/20 rounded-full">
                 <X size={20}/>
             </button>
         </div>
@@ -2229,7 +2269,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ user, activeTab, onStart,
       {activeTab === 'documents' && renderDocuments()}
       {activeTab === 'shop' && renderShop()}
       {activeTab === 'leaderboard' && <Leaderboard />}
-      {chatSession && renderChat()}
+      {isChatOpen && renderChat()}
     </div>
   );
 };

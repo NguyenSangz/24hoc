@@ -129,6 +129,36 @@ export interface GameState {
   gameOverReason: GameOverReason;
 }
 
+export interface Section {
+  title: string;
+  content: string;
+}
+
+export interface MindMapNode {
+  id: string;
+  label: string;
+  parentId?: string;
+  summary?: string;
+}
+
+export interface Lesson {
+  id: string;
+  title: string;
+  content: string;
+  sections?: Section[];
+  keyTerms?: { term: string; definition: string }[];
+  quickQuiz?: { question: string; options: string[]; correctAnswerIndex: number }[];
+  mindMap?: MindMapNode[];
+}
+
+export interface StudyGuide {
+  id: string;
+  grade: Grade;
+  subject: Subject;
+  semester: 1 | 2;
+  lessons: Lesson[];
+}
+
 export interface ChatMessage {
   role: 'user' | 'model';
   text: string;

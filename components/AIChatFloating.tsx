@@ -2,8 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Bot, Loader2, Sparkles, User, Minimize2, Maximize2, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GoogleGenAI } from "@google/genai";
 import Markdown from 'react-markdown';
+import { sendChatMessage } from '../services/gemini.client';
 
 interface Message {
   role: 'user' | 'model';
@@ -85,28 +85,18 @@ const AIChatFloating: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
-      const chat = ai.chats.create({
-        model: "gemini-3-flash-preview",
-        config: {
-          systemInstruction: "Bạn là một trợ lý giáo dục thông minh, thân thiện và nhiệt huyết của nền tảng 24hoc. Bạn có kiến thức sâu rộng về mọi lĩnh vực từ Toán, Lý, Hóa đến Văn học, Lịch sử và đời sống. Hãy trả lời câu hỏi của người dùng một cách chi tiết, dễ hiểu và truyền cảm hứng học tập. Sử dụng Markdown để định dạng câu trả lời đẹp mắt.",
-        },
-      });
-
       setMessages(prev => [...prev, { role: 'model', text: '' }]);
-      
-      const result = await chat.sendMessageStream({ message: userMessage });
-      let fullText = '';
-      
-      for await (const chunk of result) {
-        const chunkText = chunk.text;
-        fullText += chunkText;
-        setMessages(prev => {
-          const newMessages = [...prev];
-          newMessages[newMessages.length - 1] = { role: 'model', text: fullText };
-          return newMessages;
-        });
-      }
+      const responseText = await sendChatMessage(
+        [...messages, { role: 'user', text: userMessage }].map(msg => ({
+          role: msg.role === 'user' ? 'user' : 'assistant',
+          content: msg.text
+        }))
+      );
+      setMessages(prev => {
+        const newMessages = [...prev];
+        newMessages[newMessages.length - 1] = { role: 'model', text: responseText || "Xin lỗi, tôi gặp chút trục trặc." };
+        return newMessages;
+      });
     } catch (error) {
       console.error("AI Chat Error:", error);
       setMessages(prev => {
